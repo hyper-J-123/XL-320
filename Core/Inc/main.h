@@ -77,13 +77,15 @@ void Error_Handler(void);
 // 舵机ID定义
 #define SERVO_ID_1               0x01
 #define SERVO_ID_2               0x02
-#define SERVO_ID_3               0x00
+#define SERVO_ID               	 0x00
 
 // XL-320 LED 颜色定义
 #define LED_OFF                  0
 #define LED_RED                  1
 #define LED_GREEN                2
 #define LED_BLUE                 4
+#define LED_PURPLE				 5
+#define LED_CYAN				 6
 
 /* USER CODE BEGIN Private defines */
 

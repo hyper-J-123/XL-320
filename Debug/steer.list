@@ -249,7 +249,7 @@ int main(void)
  8000240:	f000 f879 	bl	8000336 <xlSeriesStart>
 
   // 设置舵机到初始位置
-  xl320SendPosition(SERVO_ID_3, 512);
+  xl320SendPosition(SERVO_ID, 512);
  8000244:	f44f 7100 	mov.w	r1, #512	@ 0x200
  8000248:	2000      	movs	r0, #0
  800024a:	f000 f97b 	bl	8000544 <xl320SendPosition>
@@ -261,12 +261,12 @@ int main(void)
 
     /* USER CODE BEGIN 3 */
     // 任务1: 转到位置0，亮蓝灯
-    xlSeriesLed(SERVO_ID_3, LED_BLUE, XL320Led);
+    xlSeriesLed(SERVO_ID, LED_BLUE, XL320Led);
  8000256:	2219      	movs	r2, #25
  8000258:	2104      	movs	r1, #4
  800025a:	2000      	movs	r0, #0
  800025c:	f000 f90a 	bl	8000474 <xlSeriesLed>
-    xl320SendPosition(SERVO_ID_3, 0);
+    xl320SendPosition(SERVO_ID, 0);
  8000260:	2100      	movs	r1, #0
  8000262:	2000      	movs	r0, #0
  8000264:	f000 f96e 	bl	8000544 <xl320SendPosition>
@@ -275,12 +275,12 @@ int main(void)
  800026c:	f000 fc62 	bl	8000b34 <HAL_Delay>
 
     // 任务2: 转到中间位置512，亮绿灯
-    xlSeriesLed(SERVO_ID_3, LED_GREEN, XL320Led);
+    xlSeriesLed(SERVO_ID, LED_GREEN, XL320Led);
  8000270:	2219      	movs	r2, #25
  8000272:	2102      	movs	r1, #2
  8000274:	2000      	movs	r0, #0
  8000276:	f000 f8fd 	bl	8000474 <xlSeriesLed>
-    xl320SendPosition(SERVO_ID_3, 512);
+    xl320SendPosition(SERVO_ID, 512);
  800027a:	f44f 7100 	mov.w	r1, #512	@ 0x200
  800027e:	2000      	movs	r0, #0
  8000280:	f000 f960 	bl	8000544 <xl320SendPosition>
@@ -289,19 +289,19 @@ int main(void)
  8000288:	f000 fc54 	bl	8000b34 <HAL_Delay>
 
     // 任务3: 转到最大位置1023，亮红灯
-    xlSeriesLed(SERVO_ID_3, LED_RED, XL320Led);
+    xlSeriesLed(SERVO_ID, LED_RED, XL320Led);
  800028c:	2219      	movs	r2, #25
  800028e:	2101      	movs	r1, #1
  8000290:	2000      	movs	r0, #0
  8000292:	f000 f8ef 	bl	8000474 <xlSeriesLed>
-    xl320SendPosition(SERVO_ID_3, 1023);
+    xl320SendPosition(SERVO_ID, 1023);
  8000296:	f240 31ff 	movw	r1, #1023	@ 0x3ff
  800029a:	2000      	movs	r0, #0
  800029c:	f000 f952 	bl	8000544 <xl320SendPosition>
     HAL_Delay(1500);
  80002a0:	f240 50dc 	movw	r0, #1500	@ 0x5dc
  80002a4:	f000 fc46 	bl	8000b34 <HAL_Delay>
-    xlSeriesLed(SERVO_ID_3, LED_BLUE, XL320Led);
+    xlSeriesLed(SERVO_ID, LED_BLUE, XL320Led);
  80002a8:	bf00      	nop
  80002aa:	e7d4      	b.n	8000256 <main+0x36>
 
@@ -429,7 +429,7 @@ void xlSeriesStart(void)
     HAL_Delay(100);
  8000354:	2064      	movs	r0, #100	@ 0x64
  8000356:	f000 fbed 	bl	8000b34 <HAL_Delay>
-    xlSeriesLed(SERVO_ID_3, 0x01, XL320Led);
+    xlSeriesLed(SERVO_ID, 0x01, XL320Led);
  800035a:	2219      	movs	r2, #25
  800035c:	2101      	movs	r1, #1
  800035e:	2000      	movs	r0, #0
@@ -454,7 +454,7 @@ void xlSeriesStart(void)
     HAL_Delay(100);
  8000384:	2064      	movs	r0, #100	@ 0x64
  8000386:	f000 fbd5 	bl	8000b34 <HAL_Delay>
-    xlSeriesTorque(SERVO_ID_3, 0x01, XL320Torque);
+    xlSeriesTorque(SERVO_ID, 0x01, XL320Torque);
  800038a:	2218      	movs	r2, #24
  800038c:	2101      	movs	r1, #1
  800038e:	2000      	movs	r0, #0

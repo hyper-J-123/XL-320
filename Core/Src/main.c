@@ -64,10 +64,12 @@ typedef struct {
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
-/*                  ֡ͷ                  id      length       instruct    address     parameters               crc          */
+/*                  		֡ͷ                  id      length       instruct    address     parameters               crc          */
 uint8_t torqueFrame[]={  0xFF,0xFF,0xFD,0x00,  0x00,   0x06,0x00,   0x03,      0x40,0x00,   0x01,                   0x00,0x00};
 uint8_t ledFrame[]={     0xFF,0xFF,0xFD,0x00,  0x00,   0x06,0x00,   0x03,      0x19,0x00,   0x01,                   0x00,0x00};
-uint8_t xl320PFrame[]={  0xFF,0xFF,0xFD,0x00,  0x00,   0x07,0x00,   0x03,      0x1E,0x00,   0xAD,0x09,              0x65,0x6D};
+uint8_t ctrlModeFrame[]={0xFF,0xFF,0xFD,0x00,  0x00,   0x06,0x00,   0x03,      0x0B,0x00,   0x02,                   0x00,0x00};
+uint8_t xl320PFrame[]={  0xFF,0xFF,0xFD,0x00,  0x00,   0x07,0x00,   0x03,      0x1e,0x00,   0x01,0x00,              0x65,0x6D};
+uint8_t xl320MSFrame[]={ 0xFF,0xFF,0xFD,0x00,  0x00,   0x07,0x00,   0x03,      0x20,0x00,   0x01,0x00,              0x65,0x6D};
 uint8_t xl320PGFrame[]={ 0xFF,0xFF,0xFD,0x00,  0x00,   0x06,0x00,   0x03,      0x1D,0x00,   0x20,                   0x65,0x6D};
 
 uint8_t xl320PRead[]={   0xFF,0xFF,0xFD,0x00,  0x00,   0x07,0x00,   0x02,      0x25,0x00,   0x02,0x00,              0x21,0xB5};
@@ -82,12 +84,14 @@ void SystemClock_Config(void);
 /* USER CODE BEGIN PFP */
 // XL系列舵机函数声明
 void xlSeriesStart(void);
+void xlSeriesControlMode(uint8_t id, uint8_t mode);
 void xlSeriesSetDirection(uint8_t tx_mode);
 void xlSeriesSendFrame(UART_HandleTypeDef *huart, uint8_t *frame, uint16_t length);
 uint16_t updateCRC(uint16_t crc_accum, uint8_t *data_blk_ptr, uint16_t data_blk_size);
 void xlSeriesLed(uint8_t id, uint8_t on, uint8_t address);
 void xlSeriesTorque(uint8_t id, uint8_t on, uint8_t address);
 void xl320SendPosition(uint8_t id, uint16_t position);
+void xl320SendMovingSpeed(uint8_t id, uint16_t movingSpeed);
 void xl320SendPGain(uint8_t id, uint8_t pGain);
 void xl320ReadPosition(uint8_t id);
 void xlPowerOff(uint8_t isOn);
@@ -137,8 +141,13 @@ int main(void)
   xlSeriesStart();
 
   // 设置舵机到初始位置
-  xl320SendPosition(SERVO_ID_3, 512);
-  HAL_Delay(1000);
+  //xl320SendMovingSpeed(SERVO_ID, 100);
+  xl320SendPosition(SERVO_ID, 512);
+  xlSeriesLed(SERVO_ID, LED_GREEN, XL320Led);
+  HAL_Delay(5000);
+  xl320SendPosition(SERVO_ID, 0);
+  xlSeriesLed(SERVO_ID, LED_PURPLE, XL320Led);
+  HAL_Delay(5000);
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -147,21 +156,16 @@ int main(void)
   {
     /* USER CODE END WHILE */
 
-    /* USER CODE BEGIN 3 */
-    // 任务1: 转到位置0，亮蓝灯
-    xlSeriesLed(SERVO_ID_3, LED_BLUE, XL320Led);
-    xl320SendPosition(SERVO_ID_3, 0);
-    HAL_Delay(1500);
+    // 任务2: 转到1023
+    xlSeriesLed(SERVO_ID, LED_GREEN, XL320Led);
+    xl320SendPosition(SERVO_ID, 1023);
+    HAL_Delay(5000);
 
-    // 任务2: 转到中间位置512，亮绿灯
-    xlSeriesLed(SERVO_ID_3, LED_GREEN, XL320Led);
-    xl320SendPosition(SERVO_ID_3, 512);
-    HAL_Delay(1500);
+    // 任务3: 转到0
+	xlSeriesLed(SERVO_ID, LED_CYAN, XL320Led);
+	xl320SendPosition(SERVO_ID, 0);
+	HAL_Delay(5000);
 
-    // 任务3: 转到最大位置1023，亮红灯
-    xlSeriesLed(SERVO_ID_3, LED_RED, XL320Led);
-    xl320SendPosition(SERVO_ID_3, 1023);
-    HAL_Delay(1500);
   }
   /* USER CODE END 3 */
 }
@@ -216,19 +220,17 @@ void SystemClock_Config(void)
 void xlSeriesStart(void)
 {
     // 初始化LED和扭矩
-    xlSeriesLed(SERVO_ID_1, 0x01, XL430Led);
-    HAL_Delay(100);
-    xlSeriesLed(SERVO_ID_2, 0x01, XL430Led);
-    HAL_Delay(100);
-    xlSeriesLed(SERVO_ID_3, 0x01, XL320Led);
+
+    xlSeriesLed(SERVO_ID, 0x01, XL320Led);
     HAL_Delay(100);
 
-    xlSeriesTorque(SERVO_ID_1, 0x01, XL430Torque);
+    xlSeriesTorque(SERVO_ID, 0x01, XL320Torque);
     HAL_Delay(100);
-    xlSeriesTorque(SERVO_ID_2, 0x01, XL430Torque);
+
+    xlSeriesControlMode(SERVO_ID, 2);
     HAL_Delay(100);
-    xlSeriesTorque(SERVO_ID_3, 0x01, XL320Torque);
-    HAL_Delay(100);
+
+    xl320SendMovingSpeed(SERVO_ID, 100);
 }
 
 
@@ -347,6 +349,27 @@ void xlSeriesLed(uint8_t id, uint8_t on, uint8_t address)
 }
 
 /**
+  * @brief  控制舵机模式
+  * @param  id: 舵机ID
+  * @param  mode: 控制模式：1、滚动模式 2、关节模式
+  * @retval None
+  */
+void xlSeriesControlMode(uint8_t id, uint8_t mode)
+{
+    uint16_t crc;
+
+    ctrlModeFrame[4] = id;
+    ctrlModeFrame[10] = mode;
+
+    crc = updateCRC(0, ctrlModeFrame, 11);
+    ctrlModeFrame[11] = (uint8_t)(crc & 0xff);
+    ctrlModeFrame[12] = (uint8_t)((crc >> 8) & 0xff);
+
+    xlSeriesSendFrame(&huart2, ctrlModeFrame, 13);
+    HAL_Delay(1);
+}
+
+/**
   * @brief  控制舵机扭矩
   * @param  id: 舵机ID
   * @param  on: 扭矩状态
@@ -388,6 +411,28 @@ void xl320SendPosition(uint8_t id, uint16_t position)
     xl320PFrame[13] = (uint8_t)((crc >> 8) & 0xff);
 
     xlSeriesSendFrame(&huart2, xl320PFrame, 14);
+    HAL_Delay(1);
+}
+
+/**
+  * @brief  设置XL320转速
+  * @param  id: 舵机ID
+  * @param  movingSpeed: 目标位置
+  * @retval None
+  */
+void xl320SendMovingSpeed(uint8_t id, uint16_t movingSpeed)
+{
+    uint16_t crc;
+
+    xl320MSFrame[4] = id;
+    xl320MSFrame[10] = (uint8_t)(movingSpeed & 0xFF);
+    xl320MSFrame[11] = (uint8_t)((movingSpeed >> 8) & 0xFF);
+
+    crc = updateCRC(0, xl320MSFrame, 12);
+    xl320MSFrame[12] = (uint8_t)(crc & 0xff);
+    xl320MSFrame[13] = (uint8_t)((crc >> 8) & 0xff);
+
+    xlSeriesSendFrame(&huart2, xl320MSFrame, 14);
     HAL_Delay(1);
 }
 
@@ -441,20 +486,20 @@ void xlPowerOff(uint8_t isOn)
         // 开启所有舵机
         xlSeriesTorque(SERVO_ID_1, 0x01, XL430Torque);
         xlSeriesTorque(SERVO_ID_2, 0x01, XL430Torque);
-        xlSeriesTorque(SERVO_ID_3, 0x01, XL320Torque);
+        xlSeriesTorque(SERVO_ID, 0x01, XL320Torque);
 
         xlSeriesLed(SERVO_ID_1, 0x01, XL430Led);
         xlSeriesLed(SERVO_ID_2, 0x01, XL430Led);
-        xlSeriesLed(SERVO_ID_3, 0x01, XL320Led);
+        xlSeriesLed(SERVO_ID, 0x01, XL320Led);
     } else {
         // 关闭所有舵机
         xlSeriesTorque(SERVO_ID_1, 0x00, XL430Torque);
         xlSeriesTorque(SERVO_ID_2, 0x00, XL430Torque);
-        xlSeriesTorque(SERVO_ID_3, 0x00, XL320Torque);
+        xlSeriesTorque(SERVO_ID, 0x00, XL320Torque);
 
         xlSeriesLed(SERVO_ID_1, 0x00, XL430Led);
         xlSeriesLed(SERVO_ID_2, 0x00, XL430Led);
-        xlSeriesLed(SERVO_ID_3, 0x00, XL320Led);
+        xlSeriesLed(SERVO_ID, 0x00, XL320Led);
     }
 }
 
