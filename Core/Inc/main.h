@@ -36,15 +36,7 @@ extern "C" {
 
 /* Exported types ------------------------------------------------------------*/
 /* USER CODE BEGIN ET */
-typedef enum {
-    XL320_PARSE_SUCCESS = 0,
-    XL320_PARSE_HEADER_ERROR = -1,
-    XL320_PARSE_LENGTH_ERROR = -2,
-    XL320_PARSE_INSTRUCTION_ERROR = -4,
-    XL320_PARSE_CRC_ERROR = -5,
-    XL320_PARSE_SERVO_ERROR = -6,
-    XL320_PARSE_TIMEOUT_ERROR = -7
-} XL320_ParseResult;
+
 /* USER CODE END ET */
 
 /* Exported constants --------------------------------------------------------*/
@@ -84,20 +76,18 @@ void Error_Handler(void);
 
 // 舵机ID定义
 #define SERVO_ID_1               0x01
-#define SERVO_ID_2               0x05
-#define SERVO_ID               	 0x01
+#define SERVO_ID_2               0x02
+#define SERVO_ID               	 0x00
 
 // XL-320 LED 颜色定义
 #define LED_OFF                  0
 #define LED_RED                  1
 #define LED_GREEN                2
+#define LED_YELLOW				 3
 #define LED_BLUE                 4
 #define LED_PURPLE				 5
 #define LED_CYAN				 6
-
-// 串口接收相关定义
-#define XL320_RX_BUFFER_SIZE     16
-#define XL320_READ_TIMEOUT       100
+#define LED_WHITE				 7
 
 /* USER CODE BEGIN Private defines */
 
