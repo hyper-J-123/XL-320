@@ -102,12 +102,13 @@ void xl320SendMovingSpeed(uint8_t id, uint16_t movingSpeed);
 void xl320SendPGain(uint8_t id, uint8_t pGain);
 void xl320ReadPosition(uint8_t id);
 void xlPowerOff(uint8_t isOn);
-// 新增函数声明
 void xl320ReadPosition(uint8_t id);
 uint8_t verifyPositionPacket(uint8_t *data);
 uint16_t parsePositionValue(uint8_t *data);
 uint16_t processPositionData(void);
 void USART2_ReadCallback(void);
+uint16_t ReadPositionAndSendToPC(uint8_t id);
+void TestAccuracy(uint8_t id, uint16_t move_units);
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -149,44 +150,37 @@ int main(void)
   MX_USART3_UART_Init();
 
   /* USER CODE BEGIN 2 */
-  // 初始化舵机系统
+  /* USER CODE END WHILE */
+  //TestAccuracy(1,50);
   xlSeriesStart();
-
-  // 设置舵机到初始位置
-  //xl320SendMovingSpeed(SERVO_ID, 100);
-  xl320SendPosition(SERVO_ID, 610);
-  xlSeriesLed(SERVO_ID, LED_CYAN, XL320Led);
-  HAL_Delay(2000);
-//  xl320SendPosition(SERVO_ID, 0);
-//  xlSeriesLed(SERVO_ID, LED_PURPLE, XL320Led);
-//  HAL_Delay(1000);
-
-  // === 新增：读取位置并控制LED ===
-  // 1. 发送读取位置指令
-  xl320ReadPosition(SERVO_ID);
-
-  // 2. 等待接收数据
-  HAL_Delay(10); // 短暂等待数据接收
-
-  // 3. 处理接收到的数据
-  uint16_t curr_pos = processPositionData();
-  char message[50];
-  uint16_t len = sprintf(message, "id:%d, position:%d\r\n", SERVO_ID, curr_pos);
-
+  uint8_t tested_id = 4;
+  //xlSeriesTorque(2, 0x00, XL320Torque);
+  ReadPositionAndSendToPC(tested_id);
+  HAL_Delay(200);
+  xl320SendPosition(tested_id, 600);
+  HAL_Delay(500);
+  //xlSeriesLed(2, LED_PURPLE, XL320Led);
+  xlSeriesLed(tested_id, LED_GREEN, XL320Led);
+  HAL_Delay(200);
 
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
+  char message[50];
+  uint16_t len;
   while (1)
   {
-    /* USER CODE END WHILE */
-
-    HAL_Delay(1000);
-
-    Debug_Print(message,len);
-
-	HAL_Delay(1000);
+//	  for(uint8_t id=1;id<=9;id++){
+//		  ReadPositionAndSendToPC(id);
+//		  HAL_Delay(200);
+//		  xlSeriesLed(id, LED_BLUE, XL320Led);
+//		  HAL_Delay(200);
+//	  }
+//	  len = sprintf(message, "next round\r\n");
+//	  Debug_Print(message, len);
+	  //ReadPositionAndSendToPC(1);
+	  HAL_Delay(3000);
 
   }
   /* USER CODE END 3 */
@@ -243,16 +237,15 @@ void xlSeriesStart(void)
 {
     // 初始化LED和扭矩
 
-    xlSeriesLed(SERVO_ID, 0x01, XL320Led);
-    HAL_Delay(100);
+    for(uint8_t id=1; id <= 9;id++){
+    	xlSeriesControlMode(id, 2);
+    	HAL_Delay(100);
+    	xl320SendMovingSpeed(id, 50);
+    	HAL_Delay(100);
+    	xlSeriesLed(id, LED_PURPLE, XL320Led);
+    	HAL_Delay(200);
+    }
 
-    xlSeriesTorque(SERVO_ID, 0x00, XL320Torque);
-    HAL_Delay(100);
-
-    xlSeriesControlMode(SERVO_ID, 2);
-    HAL_Delay(100);
-
-    xl320SendMovingSpeed(SERVO_ID, 100);
 }
 
 
@@ -554,19 +547,13 @@ void xl320ReadPosition(uint8_t id)
     // 启动串口接收
     // 使用轮询接收（推荐）
     uint8_t length = 13;
-	HAL_StatusTypeDef status = HAL_UART_Receive(&huart2, uart2_rx_buffer, length, 500);
+	HAL_StatusTypeDef status = HAL_UART_Receive(&huart2, uart2_rx_buffer, length, 200);
 
 	if (status == HAL_OK) {
-		// 接收成功 - 黄色
-		xlSeriesLed(SERVO_ID, LED_YELLOW, XL320Led);
 		position_received = 1;
 	} else {
-		// 接收失败 - 红色
-		xlSeriesLed(SERVO_ID, LED_RED, XL320Led);
 		position_received = 0;
 	}
-
-    HAL_Delay(500);
 }
 
 /**
@@ -603,7 +590,7 @@ uint16_t parsePositionValue(uint8_t *data)
 
 /**
  * @brief 处理接收到的位置数据
- * @retval 返回位置数据
+ * @retval 返回位置数据，0xFFFF表示读取失败
  */
 uint16_t processPositionData(void)
 {
@@ -612,10 +599,121 @@ uint16_t processPositionData(void)
             uint16_t current_position = parsePositionValue(uart2_rx_buffer);
             position_received = 0; // 重置标志
             return current_position;
-		} else {
-			xlSeriesLed(SERVO_ID, LED_GREEN, XL320Led);
-		}
+        } else {
+        	memset(uart2_rx_buffer, 0, sizeof(uart2_rx_buffer));
+        	position_received = 0; // 重置标志
+            xlSeriesLed(SERVO_ID, LED_RED, XL320Led);
+            return 0xFFF0; // 返回错误值
+        }
     }
+    return 0xFFFF; // 未接收到数据
+}
+
+/**
+ * @brief 读取舵机位置并通过串口三发送到PC
+ * @param id: 舵机ID
+ * @retval 位置信息
+ */
+uint16_t ReadPositionAndSendToPC(uint8_t id)
+{
+    char message[50];
+    uint16_t len;
+
+    // 1. 发送读取位置指令
+    xl320ReadPosition(id);
+
+    // 2. 等待数据接收完成
+    HAL_Delay(20);
+
+    // 3. 处理接收到的位置数据
+    uint16_t current_position = processPositionData();
+
+    // 4. 格式化消息：ID和位置信息
+    len = sprintf(message, "Servo ID:%d, Position:%d\r\n", id, current_position);
+
+    // 5. 通过串口三发送到PC
+    Debug_Print(message, len);
+
+    HAL_Delay(50);
+
+    return current_position;
+}
+
+/**
+ * @brief 测试舵机移动精度 往上是数字增大，往下是数字变小
+ * @param move_units: 移动的单位数（如50、100）
+ * @retval None
+ */
+void TestAccuracy(uint8_t id, uint16_t move_units)
+{
+	char message[100];
+	uint16_t len;
+
+	// Send test start information
+	len = sprintf(message, "=== Accuracy test started, move units: %d ===\r\n", move_units);
+	Debug_Print(message, len);
+
+	// Test each servo (ID 1-9)
+
+	    // 1. Read current position
+	    len = sprintf(message, "Servo ID:%d - Step 1: Reading current position...\r\n", id);
+	    Debug_Print(message, len);
+
+	    xl320ReadPosition(id);
+	    HAL_Delay(100);
+	    uint16_t curr_pos = processPositionData();
+
+	    len = sprintf(message, "Servo ID:%d - Current position: %d\r\n", id, curr_pos);
+	    Debug_Print(message, len);
+
+	    // 2. Calculate target position (ensure within valid range 0-1023)
+	    uint16_t target_pos;
+	    target_pos = curr_pos - move_units;
+
+	    if(target_pos<=0||target_pos>=1024){
+	    	len = sprintf(message, "Error!!!!Over limited!!!!\r\n");
+	    	Debug_Print(message, len);
+	    	return;
+	    }
+
+	    // Send move command
+	    len = sprintf(message, "Servo ID:%d - Step 2: Moving to target position %d\r\n", id, target_pos);
+	    Debug_Print(message, len);
+
+	    xl320SendPosition(id, target_pos);
+	    HAL_Delay(100); // Wait for servo movement to complete
+
+	    // 3. Read actual position again
+	    len = sprintf(message, "Servo ID:%d - Step 3: Reading actual position...\r\n", id);
+	    Debug_Print(message, len);
+
+	    xl320ReadPosition(id);
+	    HAL_Delay(100);
+	    uint16_t actual_pos = processPositionData();
+
+	    len = sprintf(message, "Servo ID:%d - Actual position: %d\r\n", id, actual_pos);
+	    Debug_Print(message, len);
+
+	    // 4. Calculate error
+	    int16_t error = (int16_t)actual_pos - (int16_t)target_pos;
+	    uint16_t abs_error = (error < 0) ? -error : error;
+
+	    len = sprintf(message, "Servo ID:%d - Position error: %d (Absolute: %d)\r\n", id, error, abs_error);
+	    Debug_Print(message, len);
+
+	    // 5. Set servo LED to purple
+	    xlSeriesLed(id, LED_PURPLE, XL320Led);
+
+	    // Separator line
+	    len = sprintf(message, "----------------------------------------\r\n");
+	    Debug_Print(message, len);
+
+	    HAL_Delay(100); // Delay between servos
+
+
+	// Send test completion information
+	len = sprintf(message, "=== Accuracy test completed ===\r\n\r\n");
+	Debug_Print(message, len);
 }
 
 /**
