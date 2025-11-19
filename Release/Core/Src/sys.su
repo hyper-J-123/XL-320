@@ -1,0 +1,7 @@
+../Core/Src/sys.c:56:6:system_task_schedule	0	static
+../Core/Src/sys.c:67:6:sys_uart_bps_init	8	static
+../Core/Src/sys.c:103:6:sys_param_init	16	static
+../Core/Src/sys.c:117:6:sys_param_write	16	static
+../Core/Src/sys.c:86:6:set_sampling_rate	0	static
+../Core/Src/sys.c:96:6:set_uart_bps	0	static
+../Core/Src/sys.c:128:6:system_init	8	static

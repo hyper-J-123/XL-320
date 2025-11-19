@@ -1,0 +1,4 @@
+../Core/Src/uart_protocol.c:16:7:float_data_decode	0	static
+../Core/Src/uart_protocol.c:26:6:data_encode_v2	16	static
+../Core/Src/uart_protocol.c:71:6:data_decode_v2	24	static
+../Core/Src/uart_protocol.c:149:6:uart_protocol_decode	8	static

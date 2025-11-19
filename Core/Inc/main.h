@@ -53,7 +53,27 @@ extern "C" {
 void Error_Handler(void);
 
 /* USER CODE BEGIN EFP */
-
+// XL系列舵机函数声明
+void xlSeriesStart(void);
+void xlSeriesControlMode(uint8_t id, uint8_t mode);
+void xlSeriesSetDirection(uint8_t tx_mode);
+void xlSeriesSendFrame(UART_HandleTypeDef *huart, uint8_t *frame, uint16_t length);
+uint16_t updateCRC(uint16_t crc_accum, uint8_t *data_blk_ptr, uint16_t data_blk_size);
+void xlSeriesLed(uint8_t id, uint8_t on, uint8_t address);
+void xlSeriesTorque(uint8_t id, uint8_t on, uint8_t address);
+void xl320SendPosition(uint8_t id, uint16_t position);
+void xl320SendMovingSpeed(uint8_t id, uint16_t movingSpeed);
+void xl320SendPGain(uint8_t id, uint8_t pGain);
+uint16_t xl320ReadPosition(uint8_t id);
+void xlPowerOff(uint8_t isOn);
+//void xl320ReadPosition(uint8_t id);
+uint8_t verifyPositionPacket(uint8_t *data);
+uint16_t parsePositionValue(uint8_t *data);
+uint16_t processPositionData(void);
+void USART2_ReadCallback(void);
+uint16_t ReadPositionAndSendToPC(uint8_t id);
+uint8_t xl320CheckMovingStatus(uint8_t id);
+void TestAccuracy(uint8_t id, uint16_t move_units);
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/

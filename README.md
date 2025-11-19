@@ -10,3 +10,7 @@
 ### 2.使用方法
 * 驱动函数主要写在core/src/main.c里面
 * 用stm32cubeIDE打开
+### 3.串口通信协议core
+* 0xA8 func data_length id1 position1 id2 position2 id3 position3 id4 position4 id5 position5 id6 position6 id7 position7 id8 position8 id9 position9 sum
+* data_length 2
+* position 2

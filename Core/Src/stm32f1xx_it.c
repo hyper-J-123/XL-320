@@ -227,6 +227,12 @@ void USART1_IRQHandler(void)
 			__HAL_UART_CLEAR_IDLEFLAG(&huart1);                 // 清除空闲中断标志
 			HAL_UART_DMAStop(&huart1);                          // 停止DMA传输
 			rx1_num = RX_MAX_BUF - __HAL_DMA_GET_COUNTER(&hdma_usart1_rx);
+//			char header[30];
+//			uint8_t len = sprintf(header, "[DMA Recv Bytes]:%d\r\n", sizeof(RxBuf1));
+//			// 发送头部信息
+//			HAL_UART_Transmit(&huart1, (uint8_t*)header, len, 100);
+			// 发送刚才 DMA 接收到的实际数据
+//			HAL_UART_Transmit(&huart1, RxBuf1, sizeof(RxBuf1), 100);
 			HAL_UART_Receive_DMA(&huart1, RxBuf1, RX_MAX_BUF);     // 重新打开DMA接收
 		}
   /* USER CODE END USART1_IRQn 0 */

@@ -102,27 +102,7 @@ char message[50];
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 /* USER CODE BEGIN PFP */
-// XL系列舵机函数声明
-void xlSeriesStart(void);
-void xlSeriesControlMode(uint8_t id, uint8_t mode);
-void xlSeriesSetDirection(uint8_t tx_mode);
-void xlSeriesSendFrame(UART_HandleTypeDef *huart, uint8_t *frame, uint16_t length);
-uint16_t updateCRC(uint16_t crc_accum, uint8_t *data_blk_ptr, uint16_t data_blk_size);
-void xlSeriesLed(uint8_t id, uint8_t on, uint8_t address);
-void xlSeriesTorque(uint8_t id, uint8_t on, uint8_t address);
-void xl320SendPosition(uint8_t id, uint16_t position);
-void xl320SendMovingSpeed(uint8_t id, uint16_t movingSpeed);
-void xl320SendPGain(uint8_t id, uint8_t pGain);
-uint16_t xl320ReadPosition(uint8_t id);
-void xlPowerOff(uint8_t isOn);
-//void xl320ReadPosition(uint8_t id);
-uint8_t verifyPositionPacket(uint8_t *data);
-uint16_t parsePositionValue(uint8_t *data);
-uint16_t processPositionData(void);
-void USART2_ReadCallback(void);
-uint16_t ReadPositionAndSendToPC(uint8_t id);
-uint8_t xl320CheckMovingStatus(uint8_t id);
-void TestAccuracy(uint8_t id, uint16_t move_units);
+
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -172,26 +152,29 @@ int main(void)
   //TestAccuracy(1,50);
   xlSeriesStart();
   uint8_t tested_id = 1;
-  char *token;
-char tx_buffer[50];
-uint8_t id;
-uint16_t position;
+
 //  xlSeriesTorque(2, 0x01, XL320Torque);
-  xl320SendPosition(tested_id, 500);
+  xl320SendPosition(tested_id, 800);
   HAL_Delay(1000);
 //  xl320CheckMovingStatus(tested_id);
 //  ReadPositionAndSendToPC(tested_id);
-  xlSeriesLed(tested_id, LED_GREEN, XL320Led);
+//  xlSeriesLed(tested_id, LED_GREEN, XL320Led);
   HAL_Delay(100);
-
+  uint8_t last_send_time = HAL_GetTick();
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-
-
+	  uint8_t i;
+	  uart_protocol_decode();
+//	xl320CheckMovingStatus(tested_id);
+	  if (HAL_GetTick() - last_send_time > 100)
+	      {
+	          Read9ServosAndSend_Protocol();
+	          last_send_time = HAL_GetTick();
+	      }
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -250,7 +233,7 @@ void xlSeriesStart(void)
     for(uint8_t id=1; id <= 9;id++){
     	xlSeriesControlMode(id, 2);
     	HAL_Delay(100);
-    	xl320SendMovingSpeed(id, 30);
+    	xl320SendMovingSpeed(id, 50);
     	HAL_Delay(100);
     	xlSeriesLed(id, LED_PURPLE, XL320Led);
     	HAL_Delay(200);
@@ -438,6 +421,194 @@ void xl320SendPosition(uint8_t id, uint16_t position)
     xlSeriesSendFrame(&huart2, xl320PFrame, 14);
     HAL_Delay(1);
 }
+/**
+ * @brief 读取XL320舵机位置
+ * @param id: 舵机ID
+ * @retval None
+ */
+uint16_t xl320ReadPosition(uint8_t id)
+{
+    uint16_t crc;
+
+    // 更新ID
+    xl320ReadGoalPosition[4] = id;
+
+    // 计算CRC（从包头到参数结束，不包括CRC字段）
+    crc = updateCRC(0, xl320ReadGoalPosition, 12);
+    xl320ReadGoalPosition[12] = (uint8_t)(crc & 0xFF);
+    xl320ReadGoalPosition[13] = (uint8_t)((crc >> 8) & 0xFF);
+
+    // 发送读取指令
+    xlSeriesSendFrame(&huart2, xl320ReadGoalPosition, 14);
+
+    // 启动串口接收
+    // 使用轮询接收
+    uint8_t length = 13;
+	HAL_StatusTypeDef status = HAL_UART_Receive(&huart2, uart2_rx_buffer, length, 200);
+
+	if (status == HAL_OK) {
+//		position_received = 1;
+		if (verifyPositionPacket(uart2_rx_buffer)) {
+			uint16_t current_position = (uint16_t)(uart2_rx_buffer[10] << 8) | uart2_rx_buffer[9];
+			return current_position;
+		} else {
+			memset(uart2_rx_buffer, 0, sizeof(uart2_rx_buffer));
+			xlSeriesLed(SERVO_ID, LED_RED, XL320Led);
+			return 0xFFF0; // 返回错误值
+		}
+	} else {
+//		position_received = 0;
+		return 0xFFFF; // 未接收到数据
+	}
+}
+
+/**
+ * @brief 验证位置数据包的有效性
+ * @param data: 接收到的数据
+ * @retval 1:有效 0:无效
+ */
+uint8_t verifyPositionPacket(uint8_t *data)
+{
+    // 检查包头
+    if (data[0] != 0xFF || data[1] != 0xFF || data[2] != 0xFD || data[3] != 0x00) {
+        return 0;
+    }
+
+    // 检查指令（应该是0x55，即读取应答）
+    if (data[7] != 0x55) {
+        return 0;
+    }
+
+    return 1;
+}
+
+
+/**
+ * @brief 读取舵机位置并通过串口1发送到PC
+ * @param id: 舵机ID
+ * @retval 位置信息
+ */
+uint16_t ReadPositionAndSendToPC(uint8_t id)
+{
+    char message[50];
+    uint16_t len;
+
+    uint16_t current_position = xl320ReadPosition(id);
+
+    HAL_Delay(20);
+
+    len = sprintf(message, "Servo ID:%d, Position:%d\r\n", id, current_position);
+    HAL_UART_Transmit(&huart1, (uint8_t*)message, len, 50);
+//    Debug_Print(message, len);
+
+    HAL_Delay(50);
+
+    return current_position;
+}
+void Read9ServosAndSend_Protocol(void)
+{
+    uint8_t tx_packet[40]; // 缓冲区
+    uint16_t positions[9];
+    uint16_t data_len = 27; // 9个舵机 * 3字节
+    int idx = 0;
+    uint8_t sum = 0;
+
+    //读取数据
+    for(uint8_t i = 0; i < 9; i++)
+    {
+        positions[i] = xl320ReadPosition(i + 1); // ID从1开始
+        HAL_Delay(2); // 极短延时防冲突
+    }
+
+    // 组包
+    tx_packet[idx++] = 0xA8;          // 帧头
+    tx_packet[idx++] = 0x81;          // 功能码 (0x81 表示位置反馈)
+    tx_packet[idx++] = data_len & 0xFF;        // 长度低位
+    tx_packet[idx++] = (data_len >> 8) & 0xFF; // 长度高位
+
+    // 填充数据段 (ID + Position)
+    for(uint8_t i = 0; i < 9; i++)
+    {
+        tx_packet[idx++] = i + 1; // ID (1~9)
+        tx_packet[idx++] = positions[i] & 0xFF;        // 位置低8位
+        tx_packet[idx++] = (positions[i] >> 8) & 0xFF; // 位置高8位
+    }
+
+    // 计算校验和
+    // 从帧头开始一直加到数据段结束
+    for(int i = 0; i < idx; i++)
+    {
+        sum += tx_packet[i];
+    }
+    tx_packet[idx++] = sum; // 填入校验和
+
+    // 4. 发送二进制数据包
+    HAL_UART_Transmit(&huart1, tx_packet, idx, 500);
+}
+/**
+ * @brief 发送读取Moving状态的指令
+ * @param id: 舵机ID
+ * @retval None
+ */
+void xl320RequestMovingStatus(uint8_t id)
+{
+    uint16_t crc;
+
+    // 1. 配置指令包参数
+    xl320ReadMovingCmd[4] = id;            // 设置ID
+    xl320ReadMovingCmd[8] = XL320_ADDR_MOVING; // 设置起始地址 (49)
+    xl320ReadMovingCmd[9] = 0x00;          // 地址高位
+    xl320ReadMovingCmd[10] = 0x01;         // 读取长度: 1字节
+    xl320ReadMovingCmd[11] = 0x00;         // 长度高位
+
+    // 2. 计算CRC (从包头到参数结束，不包括CRC字段，共12字节)
+    crc = updateCRC(0, xl320ReadMovingCmd, 12);
+    xl320ReadMovingCmd[12] = (uint8_t)(crc & 0xFF);
+    xl320ReadMovingCmd[13] = (uint8_t)((crc >> 8) & 0xFF);
+
+    // 3. 发送指令
+    xlSeriesSendFrame(&huart2, xl320ReadMovingCmd, 14);
+}
+
+/**
+ * @brief 读取并解析舵机是否正在运动
+ * @param id: 舵机ID
+ * @retval 0: 运动结束(停止), 1: 正在运动, 0xFF: 读取失败
+ */
+uint8_t xl320CheckMovingStatus(uint8_t id)
+{
+    // 1. 发送读取请求
+    xl320RequestMovingStatus(id);
+
+    // 2. 接收响应
+    // 响应包长度计算: Header(4) + ID(1) + Len(2) + Inst(1) + Err(1) + Data(1) + CRC(2) = 12字节
+    uint8_t rx_len = 12;
+
+    HAL_StatusTypeDef status = HAL_UART_Receive(&huart2, uart2_rx_buffer, rx_len, 50);
+
+    if (status != HAL_OK) {
+        return 0xFF;
+    }
+
+    if (uart2_rx_buffer[0] != 0xFF || uart2_rx_buffer[1] != 0xFF ||
+        uart2_rx_buffer[2] != 0xFD || uart2_rx_buffer[7] != 0x55) {
+        return 0xFF;
+    }
+
+    if (uart2_rx_buffer[8] != 0x00) {
+        return 0xFF;
+    }
+
+    // 4. 解析Moving状态
+    // 数据位于 Error(Index 8) 之后 -> Index 9
+    uint8_t is_moving = uart2_rx_buffer[9];
+    len = sprintf(message, "is_moving:%d\r\n",is_moving);
+    HAL_UART_Transmit_IT(&huart1, (uint8_t*)message, len);
+       // 5. 通过串一发送到PC
+//    Debug_Print(movingmessage, movinglen);
+    return is_moving; // 返回 1 或 0
+}
+
 
 /**
   * @brief  设置XL320转速
