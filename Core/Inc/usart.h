@@ -39,7 +39,12 @@ extern UART_HandleTypeDef huart2;
 extern UART_HandleTypeDef huart3;
 
 /* USER CODE BEGIN Private defines */
+#define RX_MAX_BUF	1000
+#define TX_MAX_BUF	150
 
+extern uint8_t RxBuf1[RX_MAX_BUF];
+extern __IO uint16_t rx1_num;
+extern uint8_t TxBuf1[TX_MAX_BUF];
 /* USER CODE END Private defines */
 
 void MX_USART1_UART_Init(void);

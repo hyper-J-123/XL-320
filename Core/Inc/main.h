@@ -57,6 +57,7 @@ void Error_Handler(void);
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
+/* USER CODE BEGIN Private defines */
 #define DIR1_Pin GPIO_PIN_1
 #define DIR1_GPIO_Port GPIOA
 #define DIR2_Pin GPIO_PIN_4
@@ -96,7 +97,6 @@ void Error_Handler(void);
 #define LED_CYAN				 6
 #define LED_WHITE				 7
 
-/* USER CODE BEGIN Private defines */
 
 /* USER CODE END Private defines */
 

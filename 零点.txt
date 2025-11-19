@@ -1,9 +1,0 @@
-Servo ID:1, Position:286
-Servo ID:2, Position:440
-Servo ID:3, Position:719
-Servo ID:4, Position:1023
-Servo ID:5, Position:302
-Servo ID:6, Position:629
-Servo ID:7, Position:843
-Servo ID:8, Position:197
-Servo ID:9, Position:572

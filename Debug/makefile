@@ -60,8 +60,8 @@ all: main-build
 main-build: steer.elf secondary-outputs
 
 # Tool invocations
-steer.elf steer.map: $(OBJS) $(USER_OBJS) D:\stm32Proj\steer\steer\STM32F103C8TX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
-	arm-none-eabi-gcc -o "steer.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m3 -T"D:\stm32Proj\steer\steer\STM32F103C8TX_FLASH.ld" --specs=nosys.specs -Wl,-Map="steer.map" -Wl,--gc-sections -static --specs=nano.specs -mfloat-abi=soft -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+steer.elf steer.map: $(OBJS) $(USER_OBJS) /home/lab3090/STM32CubeIDE/xl320/STM32F103C8TX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
+	arm-none-eabi-gcc -o "steer.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m3 -T"/home/lab3090/STM32CubeIDE/xl320/STM32F103C8TX_FLASH.ld" --specs=nosys.specs -Wl,-Map="steer.map" -Wl,--gc-sections -static --specs=nano.specs -mfloat-abi=soft -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
 	@echo 'Finished building target: $@'
 	@echo ' '
 
