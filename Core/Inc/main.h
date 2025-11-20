@@ -31,7 +31,8 @@ extern "C" {
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+#include "stdbool.h"
+#include "sys.h"
 /* USER CODE END Includes */
 
 /* Exported types ------------------------------------------------------------*/
@@ -72,6 +73,8 @@ uint16_t parsePositionValue(uint8_t *data);
 uint16_t processPositionData(void);
 void USART2_ReadCallback(void);
 uint16_t ReadPositionAndSendToPC(uint8_t id);
+void  Read9ServosAndSend_Protocol(void);
+void Control9Servos(void);
 uint8_t xl320CheckMovingStatus(uint8_t id);
 void TestAccuracy(uint8_t id, uint16_t move_units);
 /* USER CODE END EFP */

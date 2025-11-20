@@ -1,4 +1,4 @@
 ../Core/Src/uart_protocol.c:16:7:float_data_decode	1
 ../Core/Src/uart_protocol.c:26:6:data_encode_v2	2
 ../Core/Src/uart_protocol.c:71:6:data_decode_v2	9
-../Core/Src/uart_protocol.c:149:6:uart_protocol_decode	2
+../Core/Src/uart_protocol.c:150:6:uart_protocol_decode	2

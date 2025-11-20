@@ -2,9 +2,16 @@
 #define __UART_PROTOCOL_H
 
 #include "stm32f1xx_hal.h"
-
+#include "main.h"
 #define FRAME_OVERHEAD_LENGTH 5		// 除数据部分的额外开销长度
 
+typedef struct {
+    uint8_t id;
+    uint16_t position;
+} ServoState_t;
+
+extern ServoState_t ServoTargets[9];
+extern volatile uint8_t NewDataAvailable;
 //extern uint8_t tx_buf[10];
 
 void data_decode(uint8_t* buf, int16_t num);

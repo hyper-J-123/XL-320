@@ -25,21 +25,13 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+#include "uart_protocol.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
-// 舵机位置信息结构体
-typedef struct {
-    uint8_t id;
-    uint16_t length;
-    uint8_t inst;
-    uint8_t error;
-    uint32_t position;
-    uint8_t crc1;
-    uint8_t crc2;
-} XPositionInfo;
+ServoState_t ServoTargets[9];
+volatile uint8_t NewDataAvailable = 0;
 
 typedef struct {
     uint8_t id;
@@ -161,20 +153,21 @@ int main(void)
 //  xlSeriesLed(tested_id, LED_GREEN, XL320Led);
   HAL_Delay(100);
   uint8_t last_send_time = HAL_GetTick();
+  sys_data.update_status = true;
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-	  uint8_t i;
 	  uart_protocol_decode();
+	  system_task_schedule();
 //	xl320CheckMovingStatus(tested_id);
-	  if (HAL_GetTick() - last_send_time > 100)
-	      {
-	          Read9ServosAndSend_Protocol();
-	          last_send_time = HAL_GetTick();
-	      }
+//	  if (HAL_GetTick() - last_send_time > 100)
+//	      {
+//	          Read9ServosAndSend_Protocol();
+//	          last_send_time = HAL_GetTick();
+//	      }
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -505,6 +498,19 @@ uint16_t ReadPositionAndSendToPC(uint8_t id)
 
     return current_position;
 }
+void Control9Servos(void)
+{
+	if(NewDataAvailable)
+	    {
+	        NewDataAvailable = 0; // 清除标志
+
+	        for(int i = 0; i < 9; i++)
+	        {
+	             xl320SendPosition(ServoTargets[i].id, ServoTargets[i].position);
+	              HAL_Delay(100);
+	        }
+	    }
+}
 void Read9ServosAndSend_Protocol(void)
 {
     uint8_t tx_packet[40]; // 缓冲区
@@ -517,7 +523,7 @@ void Read9ServosAndSend_Protocol(void)
     for(uint8_t i = 0; i < 9; i++)
     {
         positions[i] = xl320ReadPosition(i + 1); // ID从1开始
-        HAL_Delay(2); // 极短延时防冲突
+        HAL_Delay(10); // 极短延时防冲突
     }
 
     // 组包

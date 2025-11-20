@@ -12,6 +12,7 @@
 #include "uart_protocol.h"
 #include "string.h"
 #include "stdbool.h"
+#include "main.h"
 
 
 #define SYS_PARAM_SIZE 1
@@ -23,7 +24,7 @@ __IO uint8_t sys_task_enable = 0;
 __IO uint16_t sys_scheduling_period = 10;
 
 system_info sys_data = {
-		.uart_bps = 1000000,
+		.uart_bps = 115200,
 		.sampling_rate = 100,
 		.update_status = false,
 		.data_type = RAW_DATA,
@@ -57,9 +58,8 @@ void system_task_schedule()
 {
 	if(sys_task_flag == true)
 	{
-//		sched_task(MS5611_Array_Calculate, sys_data.sampling_rate);
-//		sched_task(update_task, sys_data.sampling_rate);
-//		sched_task(led_task, 50);
+		sched_task(Control9Servos,sys_data.sampling_rate);
+		sched_task(Read9ServosAndSend_Protocol,sys_data.sampling_rate);
 		sys_task_flag = false;
 	}
 }

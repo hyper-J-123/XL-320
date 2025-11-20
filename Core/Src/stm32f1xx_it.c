@@ -23,6 +23,8 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "usart.h"
+#include "sys.h"
+
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -187,11 +189,25 @@ void PendSV_Handler(void)
 void SysTick_Handler(void)
 {
   /* USER CODE BEGIN SysTick_IRQn 0 */
-
+	static __IO uint16_t systick_count = 1;
   /* USER CODE END SysTick_IRQn 0 */
   HAL_IncTick();
   /* USER CODE BEGIN SysTick_IRQn 1 */
-
+  if(sys_data.update_status == true)
+  	{
+  		systick_count++;
+  		// sys_count分频，对应周期加1
+  		if(systick_count > sys_scheduling_period)
+  		{
+  			systick_count = 1;
+  			sys_count++;
+  			if(sys_count > sys_data.sampling_rate)
+  			{
+  				sys_count = 1;
+  			}
+  			sys_task_flag = true;
+  		}
+  	}
   /* USER CODE END SysTick_IRQn 1 */
 }
 

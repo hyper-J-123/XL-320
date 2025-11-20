@@ -110,25 +110,26 @@ void data_decode_v2(uint8_t* buf, int16_t num)
 						// 9个舵机 * (1字节ID + 2字节位置) = 27字节
 						if(data_length == 27)
 						{
-							uint8_t servo_id;
-							uint16_t servo_pos;
-
+//							uint8_t servo_id;
+//							uint16_t servo_pos;
 							// 循环解析9组数据
 							for(int i = 0; i < 9; i++)
 							{
 								// 计算当前舵机数据的偏移量: 0, 3, 6, 9...
 								int offset = i * 3;
+								 ServoTargets[i].id = data_start[offset];
+								 ServoTargets[i].position = data_start[offset + 1] + (data_start[offset + 2] << 8);
 
-								// 提取ID (1字节)
-								servo_id = data_start[offset];
-
-								// 提取位置 (2字节，小端模式)
-								// Low Byte 在前 (offset+1), High Byte 在后 (offset+2)
-								servo_pos = data_start[offset + 1] + (data_start[offset + 2] << 8);
-
-								// 3. 执行控制：调用驱动函数驱动物理舵机
-								xl320SendPosition(servo_id, servo_pos);
+//								// 提取ID (1字节)
+//								servo_id = data_start[offset];
+//								// 提取位置 (2字节，小端模式)
+//								// Low Byte 在前 (offset+1), High Byte 在后 (offset+2)
+//								servo_pos = data_start[offset + 1] + (data_start[offset + 2] << 8);
+//								// 调用驱动函数驱动物理舵机
+//								xl320SendPosition(servo_id, servo_pos);
+//								HAL_Delay(200);
 							}
+							NewDataAvailable = 1;
 						}
 					}
 
