@@ -14,6 +14,6 @@
 * 0xA8 func data_length id1 position1 id2 position2 id3 position3 id4 position4 id5 position5 id6 position6 id7 position7 id8 position8 id9 position9 sum
 * data_length 2
 * position 2
-###4.python程序
+### 4.python程序
 * serial_read读取XL320的id和position
 * serial_write写入id和position
