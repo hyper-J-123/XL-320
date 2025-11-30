@@ -8,10 +8,12 @@
 typedef struct {
     uint8_t id;
     uint16_t position;
+    uint16_t speed;
 } ServoState_t;
 
 extern ServoState_t ServoTargets[9];
-extern volatile uint8_t NewDataAvailable;
+extern volatile uint8_t NewSpeedAvailable;
+extern volatile uint8_t NewPositionAvailable;
 //extern uint8_t tx_buf[10];
 
 void data_decode(uint8_t* buf, int16_t num);

@@ -7,6 +7,7 @@
 
 #define FRAME_HEAD 0xA8
 #define SETPOSITION 0x01
+#define SETSPEED 0x02
 /**
  * @brief 将接收到的4个uint8_t数据转换为float型数据
  *
@@ -104,14 +105,24 @@ void data_decode_v2(uint8_t* buf, int16_t num)
 				{
 					// 带有数据部分，通常是设置或配置指令
 					  // 1. 判断功能码是否匹配
+					if(func == SETSPEED){
+						if(data_length == 27)
+						{
+							for(int i = 0; i < 9; i++)
+							{
+								int offset = i * 3;
+								 ServoTargets[i].id = data_start[offset];
+								 ServoTargets[i].speed = data_start[offset + 1] + (data_start[offset + 2] << 8);
+							}
+							NewSpeedAvailable = 1;
+						}
+					}
 					if(func == SETPOSITION)
 					{
 						// 2. 确认数据长度是否符合预期
 						// 9个舵机 * (1字节ID + 2字节位置) = 27字节
 						if(data_length == 27)
 						{
-//							uint8_t servo_id;
-//							uint16_t servo_pos;
 							// 循环解析9组数据
 							for(int i = 0; i < 9; i++)
 							{
@@ -120,16 +131,8 @@ void data_decode_v2(uint8_t* buf, int16_t num)
 								 ServoTargets[i].id = data_start[offset];
 								 ServoTargets[i].position = data_start[offset + 1] + (data_start[offset + 2] << 8);
 
-//								// 提取ID (1字节)
-//								servo_id = data_start[offset];
-//								// 提取位置 (2字节，小端模式)
-//								// Low Byte 在前 (offset+1), High Byte 在后 (offset+2)
-//								servo_pos = data_start[offset + 1] + (data_start[offset + 2] << 8);
-//								// 调用驱动函数驱动物理舵机
-//								xl320SendPosition(servo_id, servo_pos);
-//								HAL_Delay(200);
 							}
-							NewDataAvailable = 1;
+							NewPositionAvailable = 1;
 						}
 					}
 

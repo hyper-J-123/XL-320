@@ -1,4 +1,4 @@
-../Core/Src/uart_protocol.c:16:7:float_data_decode	24	static
-../Core/Src/uart_protocol.c:26:6:data_encode_v2	32	static
-../Core/Src/uart_protocol.c:71:6:data_decode_v2	40	static
-../Core/Src/uart_protocol.c:149:6:uart_protocol_decode	8	static
+../Core/Src/uart_protocol.c:17:7:float_data_decode	24	static
+../Core/Src/uart_protocol.c:27:6:data_encode_v2	32	static
+../Core/Src/uart_protocol.c:72:6:data_decode_v2	48	static
+../Core/Src/uart_protocol.c:153:6:uart_protocol_decode	8	static

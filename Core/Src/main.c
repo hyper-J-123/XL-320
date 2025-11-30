@@ -31,7 +31,8 @@
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
 ServoState_t ServoTargets[9];
-volatile uint8_t NewDataAvailable = 0;
+volatile uint8_t NewPositionAvailable = 0;
+volatile uint8_t NewSpeedAvailable = 0;
 
 typedef struct {
     uint8_t id;
@@ -143,15 +144,15 @@ int main(void)
   /* USER CODE END WHILE */
   //TestAccuracy(1,50);
   xlSeriesStart();
-  uint8_t tested_id = 1;
+//  uint8_t tested_id = 1;
 
 //  xlSeriesTorque(2, 0x01, XL320Torque);
-  xl320SendPosition(tested_id, 800);
-  HAL_Delay(1000);
+//  xl320SendPosition(tested_id, 800);
+//  HAL_Delay(1000);
 //  xl320CheckMovingStatus(tested_id);
 //  ReadPositionAndSendToPC(tested_id);
 //  xlSeriesLed(tested_id, LED_GREEN, XL320Led);
-  HAL_Delay(100);
+//  HAL_Delay(100);
   uint8_t last_send_time = HAL_GetTick();
   sys_data.update_status = true;
   /* USER CODE END 2 */
@@ -226,7 +227,7 @@ void xlSeriesStart(void)
     for(uint8_t id=1; id <= 9;id++){
     	xlSeriesControlMode(id, 2);
     	HAL_Delay(100);
-    	xl320SendMovingSpeed(id, 50);
+    	xl320SendMovingSpeed(id, 80);
     	HAL_Delay(100);
     	xlSeriesLed(id, LED_PURPLE, XL320Led);
     	HAL_Delay(200);
@@ -500,16 +501,24 @@ uint16_t ReadPositionAndSendToPC(uint8_t id)
 }
 void Control9Servos(void)
 {
-	if(NewDataAvailable)
+	if(NewSpeedAvailable)
 	    {
-	        NewDataAvailable = 0; // 清除标志
-
+	        NewSpeedAvailable = 0; // 清除标志
 	        for(int i = 0; i < 9; i++)
 	        {
-	             xl320SendPosition(ServoTargets[i].id, ServoTargets[i].position);
-	              HAL_Delay(100);
+	        	xl320SendMovingSpeed(ServoTargets[i].id, ServoTargets[i].speed);
+	              HAL_Delay(300);
 	        }
 	    }
+	if(NewPositionAvailable)
+		    {
+		NewPositionAvailable = 0; // 清除标志
+		        for(int i = 0; i < 9; i++)
+		        {
+		             xl320SendPosition(ServoTargets[i].id, ServoTargets[i].position);
+		              HAL_Delay(400);
+		        }
+		    }
 }
 void Read9ServosAndSend_Protocol(void)
 {
@@ -523,7 +532,7 @@ void Read9ServosAndSend_Protocol(void)
     for(uint8_t i = 0; i < 9; i++)
     {
         positions[i] = xl320ReadPosition(i + 1); // ID从1开始
-        HAL_Delay(10); // 极短延时防冲突
+        HAL_Delay(100); // 极短延时防冲突
     }
 
     // 组包
